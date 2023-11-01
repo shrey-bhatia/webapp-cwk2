@@ -2,13 +2,13 @@
 {% block content%}
 <form method="POST">
     <br>
-    <h3>Add Expense</h3>
+    <h1>Add Expense</h1>
     <br>
     <div class="input-group mb-3">
         <label for="expenseTitle" class="col-sm-2 control-label">Expense Title</label>
         <!-- Client-side validation -->
         <input
-                type="text" required
+                type="text"
                 class="form-control"
                 id="expenseTitle"
                 name="expenseTitle"
@@ -23,7 +23,7 @@
         <br>
         <span class="input-group-text">£</span>
         <!-- Client-side validation -->
-        <input type="number" required
+        <input type="number"
                step="0.01"
                min="0.01"
                max="999999.99" required
