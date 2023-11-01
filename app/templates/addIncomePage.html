@@ -1,10 +1,42 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <title>Title</title>
-</head>
-<body>
+{% extends "base.html" %}
+{% block content%}
+<form method="POST">
+    <br>
+    <h3>Add Income</h3>
+    <br>
+    <div class="input-group mb-3">
+        <label for="incomeTitle" class="col-sm-2 control-label">Income Title</label>
+        <!-- Client-side validation -->
+        <input
+                type="text" required
+                class="form-control"
+                id="incomeTitle"
+                name="incomeTitle"
+                maxlength="50" required
+                placeholder="Enter income title e.g. November Salary (max 50 characters)"
+                aria-label="Enter income title"
+        />
 
-</body>
-</html>
+    </div>
+    <div class="input-group mb-3">
+        <label for="incomeAmount" class="col-sm-2 control-label">Income Amount </label>
+        <br>
+        <span class="input-group-text">£</span>
+        <!-- Client-side validation -->
+        <input type="number" required
+               step="0.01"
+               min="0.01"
+               max="999999.99" required
+               id="incomeAmount"
+               name="incomeAmount"
+               class="form-control"
+               placeholder="Upto 2 decimal places e.g. 78.30 (max 999999.99)"
+               aria-label="Amount in pounds (2 decimal places)"
+        />
+    </div>
+    <br/>
+    <button type="submit" id="my_submit" class="btn btn-dark">Submit</button>
+</form>
+{% endblock %}
+
+

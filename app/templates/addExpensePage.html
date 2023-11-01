@@ -1,10 +1,42 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <title>Title</title>
-</head>
-<body>
+{% extends "base.html" %}
+{% block content%}
+<form method="POST">
+    <br>
+    <h3>Add Expense</h3>
+    <br>
+    <div class="input-group mb-3">
+        <label for="expenseTitle" class="col-sm-2 control-label">Expense Title</label>
+        <!-- Client-side validation -->
+        <input
+                type="text" required
+                class="form-control"
+                id="expenseTitle"
+                name="expenseTitle"
+                maxlength="50" required
+                placeholder="Enter expense title e.g. October Rent (max 50 characters)"
+                aria-label="Enter expense title"
+        />
 
-</body>
-</html>
+    </div>
+    <div class="input-group mb-3">
+        <label for="expenseAmount" class="col-sm-2 control-label">Expense Amount </label>
+        <br>
+        <span class="input-group-text">£</span>
+        <!-- Client-side validation -->
+        <input type="number" required
+               step="0.01"
+               min="0.01"
+               max="999999.99" required
+               id="expenseAmount"
+               name="expenseAmount"
+               class="form-control"
+               placeholder="Upto 2 decimal places e.g. 78.30 (max 999999.99)"
+               aria-label="Amount in pounds (2 decimal places)"
+        />
+    </div>
+    <br/>
+    <button type="submit" id="my_submit" class="btn btn-dark">Submit</button>
+</form>
+{% endblock %}
+
+
