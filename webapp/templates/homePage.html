@@ -1,10 +1,3 @@
-<!-- TODO: homepage
-add goal to homepage (if there is one)
-view progress towards goal (if there is one)
-delete goal
-view total income
-view total expenses
-view balance -->
 {% extends "base.html" %}
 {% block content %}
     <br>
@@ -14,7 +7,7 @@ view balance -->
     <h2>Your Balance: £{{ balance }}</h2>
         {% if my_goal is not none %}
             {% if (my_goal.name is not none) %}
-                <h2>{{ my_goal.name }}</h2>
+                <h2>Goal: {{ my_goal.name }}</h2>
             {% else %}
                 <p>Current Goal</p>
             {% endif %}
@@ -32,6 +25,8 @@ view balance -->
             <!-- add a button to add a goal -->
             <a class="btn btn-dark" href="/addGoalPage">Add a goal</a>
         {% endif %}
+    <h2>Total Income: £{{ totalinc }}</h2>
+    <h2>Total Expenses: £{{ totalexp }}</h2>
 
 
     </div>

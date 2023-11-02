@@ -51,7 +51,8 @@ def goal_form():
 @app.route('/', methods=['GET', 'POST'])
 def home():
     mywidth = 0
-    mygoal = Goal.query.first()
+    if Goal:
+        mygoal = Goal.query.first()
     # Calculate the total expense
     all_expenses = Expense.query.all()
     totalexp = 0
@@ -94,7 +95,9 @@ def home():
 @app.route('/addGoalPage', methods=['GET', 'POST'])
 def goalpage():
     # Check if any goal exists in the database
+
     existing_goal = Goal.query.first()
+
     if existing_goal is None:
         goal_form()
         return render_template('addGoalPage.html',
