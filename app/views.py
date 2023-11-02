@@ -1,9 +1,9 @@
 # __author__ = 'Shrey Bhatia'
 # __email__ = 'fy21sb@leeds.ac.uk'
 from flask import render_template, request, flash, redirect, url_for
-from webapp import app
-from webapp.models import Income, Expense, Goal
-from webapp import db
+from app import app
+from app.models import Income, Expense, Goal
+from app import db
 
 
 def floatcheck(value):

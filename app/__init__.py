@@ -18,12 +18,12 @@ db.init_app(app)
 
 
 def create_database(app):
-    if not path.exists('webapp/' + DB_NAME):
+    if not path.exists('app/' + DB_NAME):
         db.create_all(app=app)
         print('Created Database!')
 
 
-from webapp import views
-from webapp.models import Income, Expense, Goal
+from app import views
+from app.models import Income, Expense, Goal
 
 create_database(app)
