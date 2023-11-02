@@ -1,4 +1,4 @@
-from flask import render_template, request, url_for, redirect, flash
+from flask import render_template, request, flash
 from webapp import app
 from webapp.models import Income, Expense, Goal
 from webapp import db
@@ -12,15 +12,13 @@ def floatcheck(value):
         return False
 
 
-@app.route('/', methods=['GET', 'POST'])
-def home():
-    return render_template('homePage.html',
-                           title='Home Page')
-
-
-@app.route('/addGoalPage', methods=['GET', 'POST'])
-def goal():
+def goal_form():
     if request.method == 'POST':
+        if Goal.query.first() is not None:
+            # delete old goal from database
+            existing_goal = Goal.query.first()
+            db.session.delete(existing_goal)
+            db.session.commit()
         goalname = request.form.get('goalName')
         goalamount = request.form.get('goalAmount')
         # server side validation for goal name
@@ -28,14 +26,18 @@ def goal():
             flash('Goal name must be less than 50 characters.',
                   category='error')
         elif len(goalname) == 0:
-            flash('Goal name must not be empty.', category='error')
+            flash('You are adding a goal without a name.', category='error')
         else:
             pass
         # server side validation for goal amount
         if floatcheck(goalamount):
             goalamount = round(float(goalamount), 2)
             if (goalamount >= 0.01) and (goalamount <= 999999.99):
-                pass
+                # Create a new Goal instance and add it to the database
+                new_goal = Goal(name=goalname, amount=goalamount)
+                db.session.add(new_goal)
+                db.session.commit()
+                flash('Goal added!', category='success')
             else:
                 flash('Goal amount must be greater than 0.',
                       category='error')
@@ -43,14 +45,47 @@ def goal():
             flash('Goal amount must be a number.', category='error')
         flash('Form submitted!', category='success')
 
-    return render_template('addGoalPage.html',
-                           title='Goal')
+
+@app.route('/', methods=['GET', 'POST'])
+def home():
+    mygoal = Goal.query.first()
+    return render_template('homePage.html',
+                           title='Home Page', my_goal=mygoal)
+
+
+@app.route('/addGoalPage', methods=['GET', 'POST'])
+def goalpage():
+    # Check if any goal exists in the database
+    existing_goal = Goal.query.first()
+    if existing_goal is None:
+        goal_form()
+        return render_template('addGoalPage.html',
+                               title='Add Goal')
+    else:
+        # write code to edit goal instead of adding a new one
+        # first confirm if user wants to edit goal
+        # delete old goal from database
+        # then add new goal
+        goal_form()
+
+        return render_template('addGoalPage.html',
+                               title='Edit Goal')
 
 
 @app.route('/allExpensesPage')
 def allexpensespage():
+    # Query all expense records from the database
+    all_expenses = Expense.query.all()
+
+    # Calculate the total expense
+    total = 0
+    for expense in all_expenses:
+        total += expense.amount
+
     return render_template('allExpensesPage.html',
-                           title='All Expenses')
+                           title='All Expenses',
+                           expenses=all_expenses,
+                           total=total)
 
 
 @app.route('/addIncomePage', methods=['GET', 'POST'])
@@ -108,16 +143,17 @@ def allincomespage():
                            incomes=all_incomes,
                            total=total)
 
+
 @app.route('/addExpensePage', methods=['GET', 'POST'])
 def addexpensepage():
     if request.method == 'POST':
-        expensentitle = request.form.get('expenseTitle')
+        expensetitle = request.form.get('expenseTitle')
         expenseamount = request.form.get('expenseAmount')
         # server side validation for expense title
-        if len(expensentitle) > 50:
+        if len(expensetitle) > 50:
             flash('Expense title must be less than 50 characters.',
                   category='error')
-        elif len(expensentitle) == 0:
+        elif len(expensetitle) == 0:
             flash('Expense title must not be empty.', category='error')
         else:
             pass
@@ -131,7 +167,18 @@ def addexpensepage():
                       category='error')
         else:
             flash('Expense amount must be a number.', category='error')
-        flash('Form submitted!', category='success')
+        # Check if an expense with the same title already exists
+        existing_expense = Expense.query.filter_by(title=expensetitle).first()
+
+        if existing_expense is None:
+            # If no existing expense found, add the new expense to the database
+            new_expense = Expense(title=expensetitle, amount=expenseamount)
+            db.session.add(new_expense)
+            db.session.commit()
+            flash('Expense added!', category='success')
+        else:
+            flash('Expense with this title already exists.', category='error')
+        # flash('Form submitted!', category='success')
 
     return render_template('addExpensePage.html',
-                           title='Add Expenses')
+                           title='Add Expense')

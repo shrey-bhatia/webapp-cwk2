@@ -1,3 +1,13 @@
+<!-- TODO: homepage
+add goal to homepage (if there is one)
+view progress towards goal (if there is one)
+delete goal
+view total income
+view total expenses
+view balance -->
 {% extends "base.html" %}
 {% block content %}
+    <br>
+    <h1>Homepage</h1>
+    <p> Goal: £{% print(my_goal.amount) %}</p>
 {% endblock %}
