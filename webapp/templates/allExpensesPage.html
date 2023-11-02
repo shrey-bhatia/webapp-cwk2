@@ -7,4 +7,32 @@
         {% endfor %}
     </ul>
     <p> Total: £{{ total }}</p>
+    <div class="table-responsive">
+        <table class=" table table-striped table-hover table-bordered border-dark table-align-middle">
+            <thead>
+            <TR>
+                <TH scope="col" width="300px" class="c1">Title</TH>
+                <TH scope="col" width="300px" class="c2">Amount</TH>
+                <TH scope="col" width="150px" class="c3"></TH>
+                <TH scope="col" width="150px" class="c4"></TH>
+            </TR>
+            </thead>
+            {% for expense in expenses %}
+                <TR>
+                    <TD class="c1">{{ expense.title }}</TD>
+                    <TD class="c2">£{{ expense.amount }}</TD>
+                    <TD>
+                        <button class="badge">EDIT</button>
+                    </TD>
+                    <TD>
+                        <form action="/expenseDelete/" method="POST">
+                            <input type="hidden" id="expenseTitle" name="expenseTitle" value="{{expense.title}}">
+                            <button type="submit" class="badge">DELETE</button>
+                        </form>
+                    </TD>
+
+                </TR>
+            {% endfor %}
+        </table>
+    </div>
 {% endblock %}

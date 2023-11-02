@@ -114,13 +114,15 @@ def allexpensespage():
 
     # Calculate the total expense
     total = 0
+    expitems = []
     for expense in all_expenses:
         total += expense.amount
+        expitems.append(expense)
 
     return render_template('allExpensesPage.html',
                            title='All Expenses',
                            expenses=all_expenses,
-                           total=total)
+                           total=total, expitems=expitems)
 
 
 @app.route('/addIncomePage', methods=['GET', 'POST'])
@@ -217,3 +219,22 @@ def addexpensepage():
 
     return render_template('addExpensePage.html',
                            title='Add Expense')
+
+
+@app.route('/expenseDelete/', methods=['GET', 'POST'])
+def expense_delete():
+    if request.method == 'POST':
+        # Get the expense title from the form
+        expensetitle = request.form.get('expenseTitle')
+        print(expensetitle)
+        # Query the expense record from the database
+        existing_expense = Expense.query.filter_by(title=expensetitle).first()
+        if existing_expense is None:
+            flash('Expense not found.', category='error')
+        else:
+            # Delete the expense record from the database
+            db.session.delete(existing_expense)
+            db.session.commit()
+            flash('Expense deleted!', category='success')
+
+    return redirect(url_for('allexpensespage'))
