@@ -1,6 +1,12 @@
+# __author__ = 'Shrey Bhatia'
+# __email__ = 'fy21sb@leeds.ac.uk'
+from os import path
 from flask import Flask
 from flask_sqlalchemy import SQLAlchemy
-from os import path
+
+
+__author__ = 'Shrey Bhatia'
+__email__ = 'fy21sb@leeds.ac.uk'
 
 db = SQLAlchemy()
 DB_NAME = "my_database.db"
