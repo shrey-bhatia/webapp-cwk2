@@ -1,5 +1,7 @@
 from flask import render_template, request, url_for, redirect, flash
 from webapp import app
+from webapp.models import Income, Expense, Goal
+from webapp import db
 
 
 def floatcheck(value):
@@ -54,13 +56,13 @@ def allexpensespage():
 @app.route('/addIncomePage', methods=['GET', 'POST'])
 def addincomepage():
     if request.method == 'POST':
-        incomentitle = request.form.get('incomeTitle')
+        incometitle = request.form.get('incomeTitle')
         incomeamount = request.form.get('incomeAmount')
         # server side validation for income title
-        if len(incomentitle) > 50:
+        if len(incometitle) > 50:
             flash('Income title must be less than 50 characters.',
                   category='error')
-        elif len(incomentitle) == 0:
+        elif len(incometitle) == 0:
             flash('Income title must not be empty.', category='error')
         else:
             pass
@@ -74,7 +76,18 @@ def addincomepage():
                       category='error')
         else:
             flash('Income amount must be a number.', category='error')
-        flash('Form submitted!', category='success')
+        # Check if an income with the same title already exists
+        existing_income = Income.query.filter_by(title=incometitle).first()
+
+        if existing_income is None:
+            # If no existing income found, add the new income to the database
+            new_income = Income(title=incometitle, amount=incomeamount)
+            db.session.add(new_income)
+            db.session.commit()
+            flash('Income added!', category='success')
+        else:
+            flash('Income with this title already exists.', category='error')
+        # flash('Form submitted!', category='success')
 
     return render_template('addIncomePage.html',
                            title='Add Income')
@@ -82,13 +95,21 @@ def addincomepage():
 
 @app.route('/allIncomesPage')
 def allincomespage():
-    return render_template('allIncomesPage.html',
-                           title='All Incomes')
+    # Query all income records from the database
+    all_incomes = Income.query.all()
 
+    # Calculate the total income
+    total = 0
+    for income in all_incomes:
+        total += income.amount
+
+    return render_template('allIncomesPage.html',
+                           title='All Incomes',
+                           incomes=all_incomes,
+                           total=total)
 
 @app.route('/addExpensePage', methods=['GET', 'POST'])
 def addexpensepage():
-
     if request.method == 'POST':
         expensentitle = request.form.get('expenseTitle')
         expenseamount = request.form.get('expenseAmount')
