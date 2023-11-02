@@ -1,4 +1,4 @@
-from flask import render_template, request, flash
+from flask import render_template, request, flash, redirect, url_for
 from webapp import app
 from webapp.models import Income, Expense, Goal
 from webapp import db
@@ -48,9 +48,44 @@ def goal_form():
 
 @app.route('/', methods=['GET', 'POST'])
 def home():
+    mywidth = 0
     mygoal = Goal.query.first()
+    # Calculate the total expense
+    all_expenses = Expense.query.all()
+    totalexp = 0
+    for expense in all_expenses:
+        totalexp += expense.amount
+
+    # Calculate the total income
+    all_incomes = Income.query.all()
+    totalinc = 0
+    for income in all_incomes:
+        totalinc += income.amount
+
+    balance = totalinc - totalexp
+    if mygoal is not None:
+        if (mygoal.amount is not None) and (
+                mygoal.amount != 0) and 0 <= balance <= mygoal.amount:
+            mywidth = (balance / mygoal.amount * 100)
+            mywidth = round(mywidth, 2)
+        elif balance >= mygoal.amount:
+            mywidth = 100
+    else:
+        mywidth = 0
+
+    # delete goal button
+    if request.method == 'POST':
+        # delete old goal from database
+        existing_goal = Goal.query.first()
+        db.session.delete(existing_goal)
+        db.session.commit()
+        flash('Goal deleted!', category='success')
+        return redirect(url_for('home'))
+
     return render_template('homePage.html',
-                           title='Home Page', my_goal=mygoal)
+                           title='Home Page', mywidth=mywidth, my_goal=mygoal,
+                           totalexp=totalexp, totalinc=totalinc,
+                           balance=balance)
 
 
 @app.route('/addGoalPage', methods=['GET', 'POST'])

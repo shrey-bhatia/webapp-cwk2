@@ -8,6 +8,32 @@ view balance -->
 {% extends "base.html" %}
 {% block content %}
     <br>
-    <h1>Homepage</h1>
-    <p> Goal: £{% print(my_goal.amount) %}</p>
+    <div style="width: 100%; display: flex; gap: 20px; flex-direction: column; justify-content: center; align-items: center">
+
+        <h1>Homepage</h1>
+        {% if my_goal is not none %}
+            {% if (my_goal.name is not none) %}
+                <h2>{{ my_goal.name }}</h2>
+            {% else %}
+                <p>Current Goal</p>
+            {% endif %}
+            <p>£{{ my_goal.amount }} </p>
+            <div class="progress" style="height: 40px; width: 100%;">
+            <div class="progress-bar bg-dark" role="progressbar" style="width: {{ mywidth }}%;"
+                 aria-valuenow="{{ mywidth }}" aria-valuemin="0" aria-valuemax="100">£{{ balance }}</div>
+        </div>
+        <p>You're {{ mywidth }}% of the way there!</p>
+            <form name="deleteGoalButton" id="deleteGoalButton" method="post">
+            <button type="submit" class="badge badge-dark">Delete Goal</button>
+        </form>
+
+        {% else %}
+            <!-- add a button to add a goal -->
+            <a class="badge badge-dark" href="/addGoalPage">Add a goal</a>
+        {% endif %}
+
+
+    </div>
+
+
 {% endblock %}

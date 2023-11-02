@@ -107,7 +107,12 @@ edit goal-->
     $("#updateModal").modal("hide");
 
     // submit it
-    document.getElementById("editedform").submit();
+            if (document.getElementById("goalAmount").validity.valid){
+                    document.getElementById("editedform").submit();
+            }
+            else{
+                alert("Please enter a valid amount");
+            }
 }
  function conf_edit() {
      // show the Modal
