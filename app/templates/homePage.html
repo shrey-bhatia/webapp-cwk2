@@ -3,33 +3,121 @@
     <br>
     <div style="width: 100%; display: flex; gap: 20px; flex-direction: column; justify-content: center; align-items: center">
 
-        <h1>Your Savings</h1>
-    <h2>Your Balance: £{{ balance }}</h2>
-        {% if my_goal is not none %}
-            {% if (my_goal.name is not none) %}
-                <h2>Goal: {{ my_goal.name }}</h2>
-            {% else %}
-                <p>Current Goal</p>
-            {% endif %}
-            <p>£{{ my_goal.amount }} </p>
-            <div class="progress" style="height: 40px; width: 100%;">
-            <div class="progress-bar bg-dark" role="progressbar" style="width: {{ mywidth }}%;"
-                 aria-valuenow="{{ mywidth }}" aria-valuemin="0" aria-valuemax="100">£{{ balance }}</div>
-        </div>
-        <p>You're {{ mywidth }}% of the way there!</p>
-            <form name="deleteGoalButton" id="deleteGoalButton" method="post">
-            <button type="submit" class="btn btn-dark">Delete Goal</button>
+        <h1 class="text-black">Welcome to Bookable</h1>
+    </div>
+    <br>
+    <!-- search bar div -->
+    <div style="width: 100%; display: flex; gap: 20px; flex-direction: column; justify-content: center; align-items: center">
+        <form action="{{ url_for('homepage') }}" method="GET" class="input-group">
+            <input type="text" name="query" placeholder="Search for a book..." class="form-control" aria-label="Search">
+            <div class="input-group-append">
+                <button type="submit" class="btn btn-primary">Search</button>
+            </div>
         </form>
-
+    </div>
+    <br>
+    <div class="book-container">
+        {% if query %}
+            <h2>Search results for "{{ query }}":</h2>
+            {% for book in books.items %}
+    <div class="book-item d-flex flex-column">
+        <img src="{{ book.ImageURLL }}" alt="{{ book.BookTitle }}">
+        <h2>{{ book.BookTitle }}</h2>
+        <p class="price">£{{ book.Price }}</p>
+        <p class="author">{{ book.BookAuthor }}</p>
+        <p class="year">{{ book.YearOfPublication }}</p>
+        <p class="stock">Stock: {{ book.stock }}</p>
+        <button class="like-button mt-auto" data-book-isbn="{{ book.ISBN }}">
+            <span class="like-icon">
+                {% if current_user.is_authenticated and current_user.has_liked(book) %}
+                    <i class="bi bi-star-fill"></i>
+                {% else %}
+                    <i class="bi bi-star"></i>
+                {% endif %}
+            </span>
+            <span class="like-count">({{ book.like_count }})</span>
+        </button>
+        <form action="{{ url_for('add_to_cart') }}" method="POST" class="mt-2">
+            <input type="hidden" name="book_isbn" value="{{ book.ISBN }}">
+            <button type="submit" class="btn btn-primary">Add to Cart</button>
+        </form>
+    </div>
+{% endfor %}
         {% else %}
-            <!-- add a button to add a goal -->
-            <a class="btn btn-dark" href="/addGoalPage">Add a goal</a>
+            {% for book in books.items %}
+    <div class="book-item">
+        <img src="{{ book.ImageURLL }}" alt="{{ book.BookTitle }}">
+        <h2>{{ book.BookTitle }}</h2>
+        <p class="price">£{{ book.Price }}</p>
+        <p class="author">{{ book.BookAuthor }}</p>
+        <p class="year">{{ book.YearOfPublication }}</p>
+        <p class="stock">Stock: {{ book.stock }}</p>
+        <button class="like-button mt-auto" data-book-isbn="{{ book.ISBN }}">
+            <span class="like-icon">
+                {% if current_user.is_authenticated and current_user.has_liked(book) %}
+                    <i class="bi bi-star-fill"></i>
+                {% else %}
+                    <i class="bi bi-star"></i>
+                {% endif %}
+            </span>
+            <span class="like-count">({{ book.like_count }})</span>
+        </button>
+        <form action="{{ url_for('add_to_cart') }}" method="POST" class="mt-2">
+            <input type="hidden" name="book_isbn" value="{{ book.ISBN }}">
+            <button type="submit" class="btn btn-primary">Add to Cart</button>
+        </form>
+    </div>
+{% endfor %}
         {% endif %}
-    <h2>Total Income: £{{ totalinc }}</h2>
-    <h2>Total Expenses: £{{ totalexp }}</h2>
-
-
+        <br>
     </div>
 
+    <div class="pagination">
+    <!-- First page button -->
+    <a href="{{ url_for('homepage', page=1) }}" class="btn btn-primary">First Page</a>
 
+    <!-- Previous page button -->
+    {% if books.has_prev %}
+        <a href="{{ url_for('homepage', page=books.prev_num, query=query) }}" class="btn btn-primary">Previous Page</a>
+    {% endif %}
+
+    <!-- Page number input -->
+    <form action="{{ url_for('homepage') }}" method="GET" style="display: inline;">
+        <input aria-label="Page Number" type="number" name="page" min="1" max="{{ books.pages }}" value="{{ books.page }}" style="width: 50px;">
+        <input type="submit" value="Go" class="btn btn-primary">
+    </form>
+
+    <!-- Next page button -->
+    {% if books.has_next %}
+        <a href="{{ url_for('homepage', page=books.next_num, query=query) }}" class="btn btn-primary">Next Page</a>
+    {% endif %}
+
+    <!-- Last page button -->
+    <a href="{{ url_for('homepage', page=books.pages, query=query) }}" class="btn btn-primary">Last Page</a>
+</div>
 {% endblock %}
+
+<script>
+    document.querySelectorAll('.like-button').forEach(function(button) {
+        button.addEventListener('click', function() {
+            var bookIsbn = this.dataset.bookIsbn;
+            fetch('/like_book', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    'book_isbn': bookIsbn
+                })
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.error) {
+                    alert(data.error);
+                } else {
+                    alert(data.message);
+                }
+            });
+        });
+    });
+</script>

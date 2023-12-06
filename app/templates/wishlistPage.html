@@ -1,0 +1,23 @@
+{% extends "base.html" %}
+{% block content %}
+    <h1>Your Wishlist</h1>
+    <div class="book-container">
+        {% for book in books %}
+            <div class="book-item">
+                <img src="{{ book.ImageURLL }}" alt="{{ book.BookTitle }}">
+                <h2>{{ book.BookTitle }}</h2>
+                <p class="price">£{{ book.Price }}</p>
+                <p class="author">{{ book.BookAuthor }}</p>
+                <p class="year">{{ book.YearOfPublication }}</p>
+                <p class="stock">Stock: {{ book.stock }}</p>
+                <button class="unlike-button mt-auto" data-book-isbn="{{ book.ISBN }}">
+                    <i class="bi bi-x-circle"></i><span class="like-count">({{ book.like_count }})</span>
+                </button>
+                <form action="{{ url_for('add_to_cart') }}" method="POST">
+                    <input type="hidden" name="book_isbn" value="{{ book.ISBN }}">
+                    <button type="submit" class="btn btn-primary">Add to Cart</button>
+                </form>
+            </div>
+        {% endfor %}
+    </div>
+{% endblock %}

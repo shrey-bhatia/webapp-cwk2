@@ -1,0 +1,33 @@
+{% extends "base.html" %}
+{% block content %}
+    <br>
+    <h1>Your Cart</h1>
+    <div class="container">
+        <div class="row equal">
+            {% for item in cart_items %}
+                <div class="col-md-4">
+                    <div class="card mb-4 d-flex flex-column justify-content-between h-100">
+                        <img class="card-img-top" src="{{ item.book.ImageURLL }}" alt="{{ item.book.BookTitle }}">
+                        <div class="card-body d-flex flex-column">
+                            <h2 class="card-title">{{ item.book.BookTitle }}</h2>
+                            <p class="price mt-auto">£{{ item.book.Price }}</p>
+                            <p class="quantity">Quantity: {{ item.quantity }}</p>
+                            <p class="stock">Stock: {{ item.book.stock }}</p>
+                        </div>
+                        <form action="{{ url_for('remove_from_cart') }}" method="POST" >
+                            <input type="hidden" name="book_isbn" value="{{ item.book.ISBN }}">
+                            <input type="number" name="quantity" min="1" value="1" aria-label="remove quantity from cart">
+                            <button type="submit" class="btn btn-primary">Remove</button>
+                        </form>
+                    </div>
+                </div>
+            {% endfor %}
+        </div>
+    </div>
+    <div class="container mt-4 total-cost-container">
+        <h3>Total Cost: £{{ total_cost }}</h3>
+        <form action="{{ url_for('checkoutpage') }}" method="POST">
+            <button type="submit" class="btn btn-primary">Checkout</button>
+        </form>
+    </div>
+{% endblock %}

@@ -1,334 +1,232 @@
 # __author__ = 'Shrey Bhatia'
 # __email__ = 'fy21sb@leeds.ac.uk'
-from flask import render_template, request, flash, redirect, url_for
+from flask import render_template, request, flash, redirect, url_for, session
 from app import app
-from app.models import Income, Expense, Goal
+from app.models import Book, User, Cart
 from app import db
+from flask_login import login_user, logout_user, current_user, login_required
+from werkzeug.security import generate_password_hash, check_password_hash
+from flask import jsonify
 
+@app.route('/', defaults={'page': 1})
+@app.route('/page/<int:page>')
+def homepage(page):
+    PER_PAGE = 12
+    query = request.args.get('query', '')
+    books = Book.query.filter(Book.BookTitle.ilike(f'%{query}%')).paginate(page, PER_PAGE, False)
+    return render_template('homePage.html', title='Home Page', books=books, query=query)
 
-def floatcheck(value):
-    try:
-        float(value)
-        return True
-    except ValueError:
-        return False
+@app.route('/add_to_cart', methods=['POST'])
+@login_required
+def add_to_cart():
+    # Get the book ISBN from the form data
+    book_isbn = request.form.get('book_isbn')
 
+    # Retrieve the book from the database
+    book = Book.query.filter_by(ISBN=book_isbn).first()
 
-def goal_form():
-    if request.method == 'POST':
-        if Goal.query.first() is not None:
-            # delete old goal from database
-            existing_goal = Goal.query.first()
-            db.session.delete(existing_goal)
-            db.session.commit()
-        goalname = request.form.get('goalName')
-        goalamount = request.form.get('goalAmount')
-        # server side validation for goal name
-        if len(goalname) > 50:
-            flash('Goal name must be less than 50 characters.',
-                  category='error')
-        elif len(goalname) == 0:
-            flash('You are adding a goal without a name.', category='error')
-        else:
-            pass
-        # server side validation for goal amount
-        if floatcheck(goalamount):
-            goalamount = round(float(goalamount), 2)
-            if (goalamount >= 0.01) and (goalamount <= 999999.99):
-                # Create a new Goal instance and add it to the database
-                new_goal = Goal(name=goalname, amount=goalamount)
-                db.session.add(new_goal)
-                db.session.commit()
-                flash('Goal added!', category='success')
-            else:
-                flash('Goal amount must be greater than 0.',
-                      category='error')
-        else:
-            flash('Goal amount must be a number.', category='error')
-        flash('Form submitted!', category='success')
+    # Check if the book exists
+    if book is None:
+        flash('Book not found', 'error')
+        return redirect(url_for('homepage'))
 
+    # Check if the book is in stock
+    if book.stock <= 0:
+        flash('Book is out of stock', 'error')
+        return redirect(url_for('homepage'))
 
-@app.route('/', methods=['GET', 'POST'])
-def home():
-    mywidth = 0
-    if Goal:
-        mygoal = Goal.query.first()
-    # Calculate the total expense
-    all_expenses = Expense.query.all()
-    totalexp = 0
-    for expense in all_expenses:
-        totalexp += expense.amount
+    # Decrement the book's stock
+    book.stock -= 1
 
-    # Calculate the total income
-    all_incomes = Income.query.all()
-    totalinc = 0
-    for income in all_incomes:
-        totalinc += income.amount
+    # Add the book to the cart
+    cart_item = Cart(user_id=current_user.id, book_isbn=book.ISBN, price=book.Price)
+    db.session.add(cart_item)
 
-    balance = totalinc - totalexp
-    balance = round(balance, 2)
-    if mygoal is not None:
-        if (mygoal.amount is not None) and (
-                mygoal.amount != 0) and 0 <= balance <= mygoal.amount:
-            mywidth = (balance / mygoal.amount * 100)
-            mywidth = round(mywidth, 2)
-        elif balance >= mygoal.amount:
-            mywidth = 100
-    else:
-        mywidth = 0
+    db.session.commit()
 
-    # delete goal button
-    if request.method == 'POST':
-        # delete old goal from database
-        existing_goal = Goal.query.first()
-        db.session.delete(existing_goal)
+    # Redirect the user back to the homepage
+    return redirect(url_for('homepage'))
+
+@app.route('/remove_from_cart', methods=['POST'])
+@login_required
+def remove_from_cart():
+    # Get the book ISBN from the form data
+    book_isbn = request.form.get('book_isbn')
+
+    # Retrieve the cart item from the database
+    cart_item = Cart.query.filter_by(user_id=current_user.id, book_isbn=book_isbn).first()
+
+    # Check if the cart item exists
+    if cart_item is None:
+        flash('Item not found in cart', 'error')
+        return redirect(url_for('viewcartpage'))
+
+    # Retrieve the book from the database
+    book = Book.query.filter_by(ISBN=book_isbn).first()
+
+    # Check if the book exists
+    if book is None:
+        flash('Book not found', 'error')
+        return redirect(url_for('viewcartpage'))
+
+    # Increment the book's stock
+    book.stock += 1
+
+    # Remove the item from the cart
+    db.session.delete(cart_item)
+
+    db.session.commit()
+
+    # Redirect the user back to the view cart page
+    return redirect(url_for('viewcartpage'))
+
+@app.route('/like_book', methods=['POST'])
+@login_required
+def like_book():
+    # Get the book ISBN from the AJAX request
+    book_isbn = request.json.get('book_isbn')
+
+    # Retrieve the book from the database
+    book = Book.query.filter_by(ISBN=book_isbn).first()
+
+    # Check if the book exists
+    if book is None:
+        return jsonify({'error': 'Book not found'}), 404
+
+    # Check if the current user has already liked the book
+    if current_user.has_liked(book):
+        # If the user has already liked the book, unlike it
+        current_user.likes.remove(book)
+        book.like_count -= 1
         db.session.commit()
-        flash('Goal deleted!', category='success')
-        return redirect(url_for('home'))
+        return jsonify({'message': 'Book unliked successfully', 'like_count': book.like_count}), 200
 
-    return render_template('homePage.html',
-                           title='Home Page', mywidth=mywidth, my_goal=mygoal,
-                           totalexp=totalexp, totalinc=totalinc,
-                           balance=balance)
+    # If the user has not liked the book, like it
+    current_user.likes.append(book)
+    book.like_count += 1
+    db.session.commit()
+    return jsonify({'message': 'Book liked successfully',
+                    'like_count': book.like_count}), 200
 
+@app.route('/unlike_book', methods=['POST'])
+@login_required
+def unlike_book():
+    # Get the book ISBN from the AJAX request
+    book_isbn = request.json.get('book_isbn')
 
-@app.route('/addGoalPage', methods=['GET', 'POST'])
-def goalpage():
-    # Check if any goal exists in the database
+    # Retrieve the book from the database
+    book = Book.query.filter_by(ISBN=book_isbn).first()
 
-    existing_goal = Goal.query.first()
+    # Check if the book exists
+    if book is None:
+        return jsonify({'error': 'Book not found'}), 404
 
-    if existing_goal is None:
-        goal_form()
-        return render_template('addGoalPage.html',
-                               title='Add Goal')
-    else:
-        # write code to edit goal instead of adding a new one
-        # first confirm if user wants to edit goal
-        # delete old goal from database
-        # then add new goal
-        goal_form()
+    # Check if the current user has liked the book
+    if not current_user.has_liked(book):
+        return jsonify({'error': 'You have not liked this book'}), 400
 
-        return render_template('addGoalPage.html',
-                               title='Edit Goal')
+    # Unlike the book
+    current_user.likes.remove(book)
+    book.like_count -= 1
+    db.session.commit()
 
+    # Return a successful response
+    return jsonify({'message': 'Book unliked successfully'}), 200
 
-@app.route('/allExpensesPage')
-def allexpensespage():
-    # Query all expense records from the database
-    all_expenses = Expense.query.all()
+@app.route('/checkoutPage', methods=['GET', 'POST'])
+@login_required
+def checkoutpage():
+    # Retrieve the cart items from the database
+    cart_items = Cart.query.filter_by(user_id=current_user.id).all()
 
-    # Calculate the total expense
-    total = 0
-    expitems = []
-    for expense in all_expenses:
-        total += expense.amount
-        expitems.append(expense)
-    total = round(total, 2)
+    # Calculate the total cost
+    total_cost = sum(item.price for item in cart_items)
 
-    return render_template('allExpensesPage.html',
-                           title='All Expenses',
-                           expenses=all_expenses,
-                           total=total, expitems=expitems)
-
-
-@app.route('/addIncomePage', methods=['GET', 'POST'])
-def addincomepage():
+    # If the form is submitted, clear the cart and redirect to the success page
     if request.method == 'POST':
-        incometitle = request.form.get('incomeTitle')
-        incomeamount = request.form.get('incomeAmount')
-        # server side validation for income title
-        if len(incometitle) > 50:
-            flash('Income title must be less than 50 characters.',
-                  category='error')
-        elif len(incometitle) == 0:
-            flash('Income title must not be empty.', category='error')
-        else:
-            pass
-        # server side validation for income amount
-        if floatcheck(incomeamount):
-            incomeamount = round(float(incomeamount), 2)
-            if (incomeamount >= 0.01) and (incomeamount <= 999999.99):
-                pass
-            else:
-                flash('Income amount must be greater than 0.',
-                      category='error')
-        else:
-            flash('Income amount must be a number.', category='error')
-        # Check if an income with the same title already exists
-        existing_income = Income.query.filter_by(title=incometitle).first()
+        Cart.query.filter_by(user_id=current_user.id).delete()
+        db.session.commit()
+        return redirect(url_for('checkout_success'))
 
-        if existing_income is None:
-            # If no existing income found, add the new income to the database
-            new_income = Income(title=incometitle, amount=incomeamount)
-            db.session.add(new_income)
-            db.session.commit()
-            flash('Income added!', category='success')
-        else:
-            flash('Income with this title already exists.', category='error')
-        # flash('Form submitted!', category='success')
+    # Pass the total cost to the template
+    return render_template('checkoutPage.html', title='Checkout', total_cost=total_cost)
 
-    return render_template('addIncomePage.html',
-                           title='Add Income')
+@app.route('/checkoutSuccessPage', methods=['GET'])
+@login_required
+def checkout_success():
+    return render_template('checkout_success.html', title='Order Placed')
 
 
-@app.route('/allIncomesPage')
-def allincomespage():
-    # Query all income records from the database
-    all_incomes = Income.query.all()
-
-    # Calculate the total income
-    total = 0
-    incitems = []
-    for income in all_incomes:
-        total += income.amount
-        incitems.append(income)
-    total = round(total, 2)
-
-    return render_template('allIncomesPage.html',
-                           title='All Incomes',
-                           incomes=all_incomes,
-                           total=total, incitems=incitems)
-
-
-@app.route('/addExpensePage', methods=['GET', 'POST'])
-def addexpensepage():
+@app.route('/userSignupPage', methods=['GET', 'POST'])
+def usersignuppage():
     if request.method == 'POST':
-        expensetitle = request.form.get('expenseTitle')
-        expenseamount = request.form.get('expenseAmount')
-        # server side validation for expense title
-        if len(expensetitle) > 50:
-            flash('Expense title must be less than 50 characters.',
-                  category='error')
-        elif len(expensetitle) == 0:
-            flash('Expense title must not be empty.', category='error')
+        username = request.form['username']
+        password = request.form['password']
+
+        # Check if a user with the provided username already exists
+        user = User.query.filter_by(username=username).first()
+        if user:
+            return 'A user with that username already exists'
+
+        # Create a new user with the provided username and password
+        hashed_password = generate_password_hash(password)
+        new_user = User(username=username, password=hashed_password)
+
+        # Add the new user to the database and commit the changes
+        db.session.add(new_user)
+        db.session.commit()
+
+        # Redirect the user to the login page
+        return redirect(url_for('userloginpage'))
+
+    return render_template('userSignupPage.html', title='User Signup')
+
+
+@app.route('/userLoginPage', methods=['GET', 'POST'])
+def userloginpage():
+    if request.method == 'POST':
+        username = request.form['username']
+        password = request.form['password']
+        user = User.query.filter_by(username=username).first()
+        if user and check_password_hash(user.password, password):
+            login_user(user)
+            return redirect(url_for('homepage'))
         else:
-            pass
-        # server side validation for expense amount
-        if floatcheck(expenseamount):
-            expenseamount = round(float(expenseamount), 2)
-            if (expenseamount >= 0.01) and (expenseamount <= 999999.99):
-                pass
-            else:
-                flash('Expense amount must be greater than 0.',
-                      category='error')
-        else:
-            flash('Expense amount must be a number.', category='error')
-        # Check if an expense with the same title already exists
-        existing_expense = Expense.query.filter_by(title=expensetitle).first()
+            return 'Invalid username or password'
+    return render_template('userLoginPage.html', title='User Login')
 
-        if existing_expense is None:
-            # If no existing expense found, add the new expense to the database
-            new_expense = Expense(title=expensetitle, amount=expenseamount)
-            db.session.add(new_expense)
-            db.session.commit()
-            flash('Expense added!', category='success')
-        else:
-            flash('Expense with this title already exists.', category='error')
-        # flash('Form submitted!', category='success')
+@app.route('/logoutPage')
+def logout():
+    logout_user()
+    return redirect(url_for('homepage'))
 
-    return render_template('addExpensePage.html',
-                           title='Add Expense')
+@app.route('/wishlistPage', methods=['GET'])
+@login_required
+def wishlistpage():
+    # Retrieve the books that the current user has liked
+    liked_books = current_user.likes
+
+    # Pass the liked books to the template
+    return render_template('wishlistPage.html', title='Wishlist', books=liked_books)
 
 
-@app.route('/expenseDelete/', methods=['GET', 'POST'])
-def expense_delete():
-    if request.method == 'POST' and request.form.get(
-            'expenseToDel') is not None:
-        # Get the expense title from the form
-        expensetitledel = request.form.get('expenseToDel')
-        print(expensetitledel)
-        # Query the expense record from the database
-        existing_expense = Expense.query.filter_by(
-            title=expensetitledel).first()
-        if existing_expense is None:
-            flash('Expense not found.', category='error')
-        else:
-            # Delete the expense record from the database
-            print("really deleting")
-            db.session.delete(existing_expense)
-            db.session.commit()
-            flash('Expense deleted!', category='success')
+@app.route('/viewCartPage', methods=['GET', 'POST'])
+@login_required
+def viewcartpage():
+    # Retrieve the cart items from the database
+    cart_items = Cart.query.filter_by(user_id=current_user.id).all()
 
-    return redirect(url_for('allexpensespage'))
+    # Calculate the total cost
+    total_cost = sum(item.price for item in cart_items)
+
+    # Pass the cart items and total cost to the template
+    return render_template('viewCartPage.html', title='View Cart', cart_items=cart_items, total_cost=total_cost)
 
 
-@app.route('/expenseEdit/', methods=['GET', 'POST'])
-def expense_edit():
-    if request.method == 'POST' and request.form.get(
-            'expenseTitle') is not None:
-        # Get the expense title from the form
-        expensetitle = request.form.get('expenseTitle')
-        try:
-            expenseamount = float(request.form.get('expenseAmount'))
-        except TypeError or ValueError:
-            flash('Expense amount must be a number.', category='error')
-            return redirect(url_for('allexpensespage'))
-        # Query the expense record from the database
-        existing_expense = Expense.query.filter_by(title=expensetitle).first()
-        if existing_expense is None:
-            flash('Expense not found.', category='error')
-        else:
-            # Validate the new expense amount
-
-            if (expenseamount >= 0.01) and (
-                    expenseamount <= 999999.99) and floatcheck(expenseamount):
-                existing_expense.amount = expenseamount
-                db.session.commit()
-                flash('Expense edited!', category='success')
-            else:
-                flash('Invalid expense amount.',
-                      category='error')
-
-    return redirect(url_for('allexpensespage'))
 
 
-@app.route('/incomeDelete/', methods=['GET', 'POST'])
-def income_delete():
-    if request.method == 'POST' and request.form.get(
-            'incomeToDel') is not None:
-        # Get the income title from the form
-        incometitledel = request.form.get('incomeToDel')
-        print(incometitledel)
-        # Query the income record from the database
-        existing_income = Income.query.filter_by(title=incometitledel).first()
-        if existing_income is None:
-            flash('Income not found.', category='error')
-        else:
-            # Delete the income record from the database
-            print("really deleting")
-            db.session.delete(existing_income)
-            db.session.commit()
-            flash('Income deleted!', category='success')
-
-    return redirect(url_for('allincomespage'))
 
 
-@app.route('/incomeEdit/', methods=['GET', 'POST'])
-def income_edit():
-    if request.method == 'POST' and request.form.get(
-            'incomeTitle') is not None:
-        # Get the income title from the form
-        incometitle = request.form.get('incomeTitle')
-        try:
-            incomeamount = float(request.form.get('incomeAmount'))
-        except TypeError or ValueError:
-            flash('Income amount must be a number.', category='error')
-            return redirect(url_for('allincomespage'))
-        # Query the income record from the database
-        existing_income = Income.query.filter_by(title=incometitle).first()
-        if existing_income is None:
-            flash('Income not found.', category='error')
-        else:
-            # Validate the new income amount
 
-            if (incomeamount >= 0.01) and (
-                    incomeamount <= 999999.99) and floatcheck(incomeamount):
-                existing_income.amount = incomeamount
-                db.session.commit()
-                flash('Income edited!', category='success')
-            else:
-                flash('Invalid income amount.',
-                      category='error')
 
-    return redirect(url_for('allincomespage'))
+
