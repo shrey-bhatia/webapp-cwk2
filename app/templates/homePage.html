@@ -16,9 +16,11 @@
         </form>
     </div>
     <br>
+    {% if query %}
+            <h2>Search results for "{{ query }}":</h2>
+        {% endif %}
     <div class="book-container">
         {% if query %}
-            <h2>Search results for "{{ query }}":</h2>
             {% for book in books.items %}
     <div class="book-item d-flex flex-column">
         <img src="{{ book.ImageURLL }}" alt="{{ book.BookTitle }}">
@@ -37,10 +39,14 @@
             </span>
             <span class="like-count">({{ book.like_count }})</span>
         </button>
+    {% if book.stock > 0 %}
         <form action="{{ url_for('add_to_cart') }}" method="POST" class="mt-2">
             <input type="hidden" name="book_isbn" value="{{ book.ISBN }}">
-            <button type="submit" class="btn btn-primary">Add to Cart</button>
+            <button type="submit" class="btn btn-primary"><i class="bi bi-cart-plus"></i> Add to Cart</button>
         </form>
+    {% else %}
+    <button class="btn btn-secondary" disabled>Out of Stock</button>
+{% endif %}
     </div>
 {% endfor %}
         {% else %}
@@ -62,10 +68,14 @@
             </span>
             <span class="like-count">({{ book.like_count }})</span>
         </button>
+        {% if book.stock > 0 %}
         <form action="{{ url_for('add_to_cart') }}" method="POST" class="mt-2">
             <input type="hidden" name="book_isbn" value="{{ book.ISBN }}">
-            <button type="submit" class="btn btn-primary">Add to Cart</button>
+            <button type="submit" class="btn btn-primary"><i class="bi bi-cart-plus"></i> Add to Cart</button>
         </form>
+    {% else %}
+    <button class="btn btn-secondary" disabled>Out of Stock</button>
+{% endif %}
     </div>
 {% endfor %}
         {% endif %}
