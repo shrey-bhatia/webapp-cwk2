@@ -1,8 +1,7 @@
-/* write code for all heading text to use Abril Fatface font from Google Fonts */
-
 h1 {
     font-family: 'Abril Fatface', cursive;
 }
+
 nav {
     background-color: #00b4c5;
     padding: 10px;
@@ -14,7 +13,7 @@ nav {
     padding: 10px;
     margin-top: 2.5%;
     font-weight: 600;
-    transition: background-color 0.4s ease; /* Add this line */
+    transition: background-color 0.4s ease;
 }
 
 .nav-item:hover {
@@ -83,7 +82,7 @@ body {
 }
 
 .btn-primary {
-   margin: 2px;
+    margin: 2px;
     background-color: slateblue;
 }
 
@@ -103,11 +102,11 @@ body {
 }
 
 .col-md-4 {
-    max-width: 200px;  /* Adjust this value to your preference */
+    max-width: 200px;
 }
 
 .card {
-    padding: 10px;  /* Adjust this value to your preference */
+    padding: 10px;
 }
 
 .card-title {
@@ -115,8 +114,8 @@ body {
 }
 
 input[type="number"] {
-    width: 50px;  /* Adjust this value to your preference */
-    height: 30px;  /* Adjust this value to your preference */
+    width: 50px;
+    height: 30px;
     padding: 2px;
     border: 1px solid #ddd;
     border-radius: 5px;
@@ -144,6 +143,4 @@ input[type="number"] {
     border-radius: 5px;
     box-shadow: 0 2px 5px rgba(0, 0, 0, 0.15);
 }
-
-
 

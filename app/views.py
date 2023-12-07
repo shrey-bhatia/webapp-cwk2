@@ -1,20 +1,25 @@
 # __author__ = 'Shrey Bhatia'
 # __email__ = 'fy21sb@leeds.ac.uk'
-from flask import render_template, request, flash, redirect, url_for, session
-from app import app
-from app.models import Book, User, Cart
-from app import db
+from flask import jsonify
+from flask import render_template, request, flash, redirect, url_for
 from flask_login import login_user, logout_user, current_user, login_required
 from werkzeug.security import generate_password_hash, check_password_hash
-from flask import jsonify
+
+from app import app
+from app import db
+from app.models import Book, User, Cart
+
 
 @app.route('/', defaults={'page': 1})
 @app.route('/page/<int:page>')
 def homepage(page):
-    PER_PAGE = 12
+    per_page = 12
     query = request.args.get('query', '')
-    books = Book.query.filter(Book.BookTitle.ilike(f'%{query}%')).paginate(page, PER_PAGE, False)
-    return render_template('homePage.html', title='Home Page', books=books, query=query)
+    books = Book.query.filter(Book.BookTitle.ilike(f'%{query}%')).paginate(
+        page, per_page, False)
+    return render_template('homePage.html', title='Home Page', books=books,
+                           query=query)
+
 
 @app.route('/add_to_cart', methods=['POST'])
 @login_required
@@ -39,13 +44,15 @@ def add_to_cart():
     book.stock -= 1
 
     # Add the book to the cart
-    cart_item = Cart(user_id=current_user.id, book_isbn=book.ISBN, price=book.Price)
+    cart_item = Cart(user_id=current_user.id, book_isbn=book.ISBN,
+                     price=book.Price)
     db.session.add(cart_item)
 
     db.session.commit()
 
     # Redirect the user back to the homepage
     return redirect(url_for('homepage'))
+
 
 @app.route('/remove_from_cart', methods=['POST'])
 @login_required
@@ -54,7 +61,8 @@ def remove_from_cart():
     book_isbn = request.form.get('book_isbn')
 
     # Retrieve the cart item from the database
-    cart_item = Cart.query.filter_by(user_id=current_user.id, book_isbn=book_isbn).first()
+    cart_item = Cart.query.filter_by(user_id=current_user.id,
+                                     book_isbn=book_isbn).first()
 
     # Check if the cart item exists
     if cart_item is None:
@@ -80,6 +88,7 @@ def remove_from_cart():
     # Redirect the user back to the view cart page
     return redirect(url_for('viewcartpage'))
 
+
 @app.route('/like_book', methods=['POST'])
 @login_required
 def like_book():
@@ -99,7 +108,8 @@ def like_book():
         current_user.likes.remove(book)
         book.like_count -= 1
         db.session.commit()
-        return jsonify({'message': 'Book unliked successfully', 'like_count': book.like_count}), 200
+        return jsonify({'message': 'Book unliked successfully',
+                        'like_count': book.like_count}), 200
 
     # If the user has not liked the book, like it
     current_user.likes.append(book)
@@ -107,6 +117,7 @@ def like_book():
     db.session.commit()
     return jsonify({'message': 'Book liked successfully',
                     'like_count': book.like_count}), 200
+
 
 @app.route('/unlike_book', methods=['POST'])
 @login_required
@@ -133,6 +144,7 @@ def unlike_book():
     # Return a successful response
     return jsonify({'message': 'Book unliked successfully'}), 200
 
+
 @app.route('/checkoutPage', methods=['GET', 'POST'])
 @login_required
 def checkoutpage():
@@ -149,7 +161,9 @@ def checkoutpage():
         return redirect(url_for('checkout_success'))
 
     # Pass the total cost to the template
-    return render_template('checkoutPage.html', title='Checkout', total_cost=total_cost)
+    return render_template('checkoutPage.html', title='Checkout',
+                           total_cost=total_cost)
+
 
 @app.route('/checkoutSuccessPage', methods=['GET'])
 @login_required
@@ -195,10 +209,12 @@ def userloginpage():
             return 'Invalid username or password'
     return render_template('userLoginPage.html', title='User Login')
 
+
 @app.route('/logoutPage')
 def logout():
     logout_user()
     return redirect(url_for('homepage'))
+
 
 @app.route('/wishlistPage', methods=['GET'])
 @login_required
@@ -207,7 +223,8 @@ def wishlistpage():
     liked_books = current_user.likes
 
     # Pass the liked books to the template
-    return render_template('wishlistPage.html', title='Wishlist', books=liked_books)
+    return render_template('wishlistPage.html', title='Wishlist',
+                           books=liked_books)
 
 
 @app.route('/viewCartPage', methods=['GET', 'POST'])
@@ -220,13 +237,5 @@ def viewcartpage():
     total_cost = sum(item.price for item in cart_items)
 
     # Pass the cart items and total cost to the template
-    return render_template('viewCartPage.html', title='View Cart', cart_items=cart_items, total_cost=total_cost)
-
-
-
-
-
-
-
-
-
+    return render_template('viewCartPage.html', title='View Cart',
+                           cart_items=cart_items, total_cost=total_cost)

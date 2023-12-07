@@ -17,19 +17,19 @@
     </div>
     <br>
     {% if query %}
-            <h2>Search results for "{{ query }}":</h2>
-        {% endif %}
+        <h2>Search results for "{{ query }}":</h2>
+    {% endif %}
     <div class="book-container">
         {% if query %}
             {% for book in books.items %}
-    <div class="book-item d-flex flex-column">
-        <img src="{{ book.ImageURLL }}" alt="{{ book.BookTitle }}">
-        <h2>{{ book.BookTitle }}</h2>
-        <p class="price">£{{ book.Price }}</p>
-        <p class="author">{{ book.BookAuthor }}</p>
-        <p class="year">{{ book.YearOfPublication }}</p>
-        <p class="stock">Stock: {{ book.stock }}</p>
-        <button class="like-button mt-auto" data-book-isbn="{{ book.ISBN }}">
+                <div class="book-item d-flex flex-column">
+                    <img src="{{ book.ImageURLL }}" alt="{{ book.BookTitle }}">
+                    <h2>{{ book.BookTitle }}</h2>
+                    <p class="price">£{{ book.Price }}</p>
+                    <p class="author">{{ book.BookAuthor }}</p>
+                    <p class="year">{{ book.YearOfPublication }}</p>
+                    <p class="stock">Stock: {{ book.stock }}</p>
+                    <button class="like-button mt-auto" data-book-isbn="{{ book.ISBN }}">
             <span class="like-icon">
                 {% if current_user.is_authenticated and current_user.has_liked(book) %}
                     <i class="bi bi-star-fill"></i>
@@ -37,28 +37,29 @@
                     <i class="bi bi-star"></i>
                 {% endif %}
             </span>
-            <span class="like-count">({{ book.like_count }})</span>
-        </button>
-    {% if book.stock > 0 %}
-        <form action="{{ url_for('add_to_cart') }}" method="POST" class="mt-2">
-            <input type="hidden" name="book_isbn" value="{{ book.ISBN }}">
-            <button type="submit" class="btn btn-primary"><i class="bi bi-cart-plus"></i> Add to Cart</button>
-        </form>
-    {% else %}
-    <button class="btn btn-secondary" disabled>Out of Stock</button>
-{% endif %}
-    </div>
-{% endfor %}
+                        <span class="like-count">({{ book.like_count }})</span>
+                    </button>
+                    {% if book.stock > 0 %}
+                        <form action="{{ url_for('add_to_cart') }}" method="POST" class="mt-2">
+                            <input type="hidden" name="book_isbn" value="{{ book.ISBN }}">
+                            <button type="submit" class="btn btn-primary"><i class="bi bi-cart-plus"></i> Add to Cart
+                            </button>
+                        </form>
+                    {% else %}
+                        <button class="btn btn-secondary" disabled>Out of Stock</button>
+                    {% endif %}
+                </div>
+            {% endfor %}
         {% else %}
             {% for book in books.items %}
-    <div class="book-item">
-        <img src="{{ book.ImageURLL }}" alt="{{ book.BookTitle }}">
-        <h2>{{ book.BookTitle }}</h2>
-        <p class="price">£{{ book.Price }}</p>
-        <p class="author">{{ book.BookAuthor }}</p>
-        <p class="year">{{ book.YearOfPublication }}</p>
-        <p class="stock">Stock: {{ book.stock }}</p>
-        <button class="like-button mt-auto" data-book-isbn="{{ book.ISBN }}">
+                <div class="book-item">
+                    <img src="{{ book.ImageURLL }}" alt="{{ book.BookTitle }}">
+                    <h2>{{ book.BookTitle }}</h2>
+                    <p class="price">£{{ book.Price }}</p>
+                    <p class="author">{{ book.BookAuthor }}</p>
+                    <p class="year">{{ book.YearOfPublication }}</p>
+                    <p class="stock">Stock: {{ book.stock }}</p>
+                    <button class="like-button mt-auto" data-book-isbn="{{ book.ISBN }}">
             <span class="like-icon">
                 {% if current_user.is_authenticated and current_user.has_liked(book) %}
                     <i class="bi bi-star-fill"></i>
@@ -66,50 +67,54 @@
                     <i class="bi bi-star"></i>
                 {% endif %}
             </span>
-            <span class="like-count">({{ book.like_count }})</span>
-        </button>
-        {% if book.stock > 0 %}
-        <form action="{{ url_for('add_to_cart') }}" method="POST" class="mt-2">
-            <input type="hidden" name="book_isbn" value="{{ book.ISBN }}">
-            <button type="submit" class="btn btn-primary"><i class="bi bi-cart-plus"></i> Add to Cart</button>
-        </form>
-    {% else %}
-    <button class="btn btn-secondary" disabled>Out of Stock</button>
-{% endif %}
-    </div>
-{% endfor %}
+                        <span class="like-count">({{ book.like_count }})</span>
+                    </button>
+                    {% if book.stock > 0 %}
+                        <form action="{{ url_for('add_to_cart') }}" method="POST" class="mt-2">
+                            <input type="hidden" name="book_isbn" value="{{ book.ISBN }}">
+                            <button type="submit" class="btn btn-primary"><i class="bi bi-cart-plus"></i> Add to Cart
+                            </button>
+                        </form>
+                    {% else %}
+                        <button class="btn btn-secondary" disabled>Out of Stock</button>
+                    {% endif %}
+                </div>
+            {% endfor %}
         {% endif %}
         <br>
     </div>
 
     <div class="pagination">
-    <!-- First page button -->
-    <a href="{{ url_for('homepage', page=1) }}" class="btn btn-primary">First Page</a>
+        <!-- First page button -->
+        <a href="{{ url_for('homepage', page=1) }}" class="btn btn-primary">First Page</a>
 
-    <!-- Previous page button -->
-    {% if books.has_prev %}
-        <a href="{{ url_for('homepage', page=books.prev_num, query=query) }}" class="btn btn-primary">Previous Page</a>
-    {% endif %}
+        <!-- Previous page button -->
+        {% if books.has_prev %}
+            <a href="{{ url_for('homepage', page=books.prev_num, query=query) }}" class="btn btn-primary">Previous
+                Page</a>
+        {% endif %}
 
-    <!-- Page number input -->
-    <form action="{{ url_for('homepage') }}" method="GET" style="display: inline;">
-        <input aria-label="Page Number" type="number" name="page" min="1" max="{{ books.pages }}" value="{{ books.page }}" style="width: 50px;">
-        <input type="submit" value="Go" class="btn btn-primary">
-    </form>
+        <!-- Page number input -->
+        <form action="{{ url_for('homepage') }}" method="GET" style="display: inline;">
+            <input aria-label="Page Number" type="number" name="page" min="1" max="{{ books.pages }}"
+                   value="{{ books.page }}" style="width: 50px;">
+            <input type="submit" value="Go" class="btn btn-primary">
+        </form>
 
-    <!-- Next page button -->
-    {% if books.has_next %}
-        <a href="{{ url_for('homepage', page=books.next_num, query=query) }}" class="btn btn-primary">Next Page</a>
-    {% endif %}
+        <!-- Next page button -->
+        {% if books.has_next %}
+            <a href="{{ url_for('homepage', page=books.next_num, query=query) }}" class="btn btn-primary">Next Page</a>
+        {% endif %}
 
-    <!-- Last page button -->
-    <a href="{{ url_for('homepage', page=books.pages, query=query) }}" class="btn btn-primary">Last Page</a>
-</div>
+        <!-- Last page button -->
+        <a href="{{ url_for('homepage', page=books.pages, query=query) }}" class="btn btn-primary">Last Page</a>
+    </div>
 {% endblock %}
 
+<!-- Like button script -->
 <script>
-    document.querySelectorAll('.like-button').forEach(function(button) {
-        button.addEventListener('click', function() {
+    document.querySelectorAll('.like-button').forEach(function (button) {
+        button.addEventListener('click', function () {
             var bookIsbn = this.dataset.bookIsbn;
             fetch('/like_book', {
                 method: 'POST',
@@ -120,14 +125,14 @@
                     'book_isbn': bookIsbn
                 })
             })
-            .then(response => response.json())
-            .then(data => {
-                if (data.error) {
-                    alert(data.error);
-                } else {
-                    alert(data.message);
-                }
-            });
+                .then(response => response.json())
+                .then(data => {
+                    if (data.error) {
+                        alert(data.error);
+                    } else {
+                        alert(data.message);
+                    }
+                });
         });
     });
 </script>
